@@ -2,14 +2,20 @@
 
 namespace App\Controller;
 
+use App\Service\MixRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 use function Symfony\Component\String\u;
 
 class VinylController extends AbstractController
 {
+    public function __construct(
+        private bool $isDebug,
+        private MixRepository $mixRepository
+    ) {
+    }
+
     #[Route('/', name: 'app_homepage')]
     public function homepage(): Response
     {
@@ -29,11 +35,12 @@ class VinylController extends AbstractController
     }
 
     #[Route('/browse/{slug}', name: 'app_browse')]
-    public function browse(HttpClientInterface $httpClient, string $slug = null): Response
+    public function browse(string $slug = null): Response
     {
+        dump($this->isDebug);
         $genre = $slug ? u(str_replace('-', ' ', $slug))->title(true) : null;
-        $response = $httpClient->request('GET', 'https://raw.githubusercontent.com/SymfonyCasts/vinyl-mixes/main/mixes.json');
-        $mixes = $response->toArray();
+
+        $mixes = $this->mixRepository->findAll();
 
         return $this->render('vinyl/browse.html.twig', [
             'genre' => $genre,
